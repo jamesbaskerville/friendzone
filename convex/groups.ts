@@ -4,6 +4,7 @@ import {
   getCurrentUser,
   assertGroupMember,
   assertGroupAdmin,
+  assertGroupOwner,
 } from "./lib/permissions";
 
 export const list = query({
@@ -153,5 +154,111 @@ export const updateSenpaiSettings = mutation({
       senpaiFrequency: args.senpaiFrequency,
       senpaiPersonality: args.senpaiPersonality,
     });
+  },
+});
+
+// ─── ROLE MANAGEMENT ──────────────────────────────────────
+
+export const updateMemberRole = mutation({
+  args: {
+    groupId: v.id("groups"),
+    targetUserId: v.id("users"),
+    newRole: v.union(v.literal("admin"), v.literal("member")),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    await assertGroupOwner(ctx, args.groupId, user._id);
+
+    if (args.targetUserId === user._id) {
+      throw new Error("Cannot change your own role");
+    }
+
+    const targetMembership = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group_user", (q) =>
+        q.eq("groupId", args.groupId).eq("userId", args.targetUserId)
+      )
+      .first();
+
+    if (!targetMembership) throw new Error("User is not a member of this group");
+
+    await ctx.db.patch(targetMembership._id, { role: args.newRole });
+  },
+});
+
+export const removeMember = mutation({
+  args: {
+    groupId: v.id("groups"),
+    targetUserId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const callerMembership = await assertGroupAdmin(ctx, args.groupId, user._id);
+
+    if (args.targetUserId === user._id) {
+      throw new Error("Cannot remove yourself — use leave instead");
+    }
+
+    const targetMembership = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group_user", (q) =>
+        q.eq("groupId", args.groupId).eq("userId", args.targetUserId)
+      )
+      .first();
+
+    if (!targetMembership) throw new Error("User is not a member of this group");
+
+    // Admins cannot remove other admins or the owner
+    if (
+      callerMembership.role === "admin" &&
+      targetMembership.role !== "member"
+    ) {
+      throw new Error("Admins can only remove regular members");
+    }
+
+    await ctx.db.delete(targetMembership._id);
+  },
+});
+
+export const leaveGroup = mutation({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const membership = await assertGroupMember(ctx, args.groupId, user._id);
+
+    if (membership.role === "owner") {
+      throw new Error(
+        "Owner cannot leave — transfer ownership first or delete the group"
+      );
+    }
+
+    await ctx.db.delete(membership._id);
+  },
+});
+
+export const transferOwnership = mutation({
+  args: {
+    groupId: v.id("groups"),
+    newOwnerId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const ownerMembership = await assertGroupOwner(ctx, args.groupId, user._id);
+
+    if (args.newOwnerId === user._id) {
+      throw new Error("You are already the owner");
+    }
+
+    const targetMembership = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group_user", (q) =>
+        q.eq("groupId", args.groupId).eq("userId", args.newOwnerId)
+      )
+      .first();
+
+    if (!targetMembership) throw new Error("User is not a member of this group");
+
+    await ctx.db.patch(ownerMembership._id, { role: "admin" });
+    await ctx.db.patch(targetMembership._id, { role: "owner" });
   },
 });
