@@ -18,8 +18,6 @@ export const getTimeline = query({
       .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
       .collect();
 
-    const channelIds = new Set(channels.map((c) => c._id));
-
     // Query messages with media across all channels
     // Since we can't paginate across multiple indexes, we query all messages
     // and filter for media. For a production app, a dedicated media table would be better.
