@@ -11,7 +11,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 export function HallOfFame() {
   const { groupId: groupIdParam } = useParams();
   const groupId = groupIdParam as Id<"groups">;
-  const { memberMap } = useGroupContext();
+  const { group, memberMap } = useGroupContext();
 
   const entries = useQuery(api.hallOfFame.getByGroup, { groupId });
 
@@ -36,7 +36,7 @@ export function HallOfFame() {
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <div className="text-4xl">{"\u{1F3C6}"}</div>
             <p className="text-text-secondary">
-              No enshrined messages yet. React with {"\u{1F3C6}"} (5+ people) to enshrine!
+              No enshrined messages yet. React with {"\u{1F3C6}"} ({group.hallOfFameThreshold ?? 5}+ people) to enshrine!
             </p>
           </div>
         ) : (

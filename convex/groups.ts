@@ -133,6 +133,25 @@ export const join = mutation({
   },
 });
 
+export const updateHallOfFameThreshold = mutation({
+  args: {
+    groupId: v.id("groups"),
+    hallOfFameThreshold: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    await assertGroupAdmin(ctx, args.groupId, user._id);
+
+    if (args.hallOfFameThreshold < 1 || !Number.isInteger(args.hallOfFameThreshold)) {
+      throw new Error("Threshold must be a positive integer");
+    }
+
+    await ctx.db.patch(args.groupId, {
+      hallOfFameThreshold: args.hallOfFameThreshold,
+    });
+  },
+});
+
 export const updateSenpaiSettings = mutation({
   args: {
     groupId: v.id("groups"),

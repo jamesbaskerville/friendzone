@@ -9,6 +9,25 @@ export function Settings() {
   const { group } = useGroupContext();
   const updateSenpai = useMutation(api.groups.updateSenpaiSettings);
 
+  const updateHallOfFameThreshold = useMutation(
+    api.groups.updateHallOfFameThreshold
+  );
+  const [hofThreshold, setHofThreshold] = useState(
+    group.hallOfFameThreshold ?? 5
+  );
+  const [hofSaved, setHofSaved] = useState(false);
+
+  async function handleSaveHofThreshold() {
+    const value = Math.max(1, Math.round(hofThreshold));
+    setHofThreshold(value);
+    await updateHallOfFameThreshold({
+      groupId: group._id,
+      hallOfFameThreshold: value,
+    });
+    setHofSaved(true);
+    setTimeout(() => setHofSaved(false), 2000);
+  }
+
   const [senpaiEnabled, setSenpaiEnabled] = useState(
     group.senpaiEnabled ?? true
   );
@@ -123,6 +142,40 @@ export function Settings() {
                   </span>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* Hall of Fame Settings */}
+          <section>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-trophy-gold">
+              Hall of Fame
+            </h3>
+            <div className="space-y-4 rounded-xl border border-trophy-gold/20 bg-trophy-gold/5 p-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  Trophy Threshold
+                </label>
+                <p className="mb-2 text-xs text-text-tertiary">
+                  Number of unique {"\u{1F3C6}"} reactions needed to enshrine a
+                  message.
+                </p>
+                <input
+                  type="number"
+                  min={1}
+                  value={hofThreshold}
+                  onChange={(e) =>
+                    setHofThreshold(parseInt(e.target.value, 10) || 1)
+                  }
+                  className="w-full rounded-lg border border-border bg-bg-surface px-4 py-2.5 text-sm text-text-primary focus:border-border-focus focus:outline-none"
+                />
+              </div>
+
+              <button
+                onClick={handleSaveHofThreshold}
+                className="w-full rounded-lg bg-trophy-gold px-4 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-trophy-gold/80"
+              >
+                {hofSaved ? "Saved!" : "Save Threshold"}
+              </button>
             </div>
           </section>
 

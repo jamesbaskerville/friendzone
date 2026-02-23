@@ -31,6 +31,7 @@ export default defineSchema({
     ),
     senpaiPersonality: v.optional(v.string()),
     inviteCode: v.string(),
+    hallOfFameThreshold: v.optional(v.number()),
   }).index("by_inviteCode", ["inviteCode"]),
 
   groupMembers: defineTable({
