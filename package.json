@@ -4,9 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite\" \"convex dev\"",
+    "dev": "concurrently \"vite\" \"NODE_TLS_REJECT_UNAUTHORIZED=0 convex dev\"",
     "dev:frontend": "vite",
-    "dev:backend": "convex dev",
+    "dev:backend": "NODE_TLS_REJECT_UNAUTHORIZED=0 convex dev",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint ."
