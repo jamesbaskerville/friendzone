@@ -9,6 +9,22 @@ import { paginationOptsValidator } from "convex/server";
 import { getCurrentUser, assertGroupMember } from "./lib/permissions";
 import { parseGameScore } from "./lib/gameParser";
 
+export const getById = query({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) throw new Error("Message not found");
+
+    const channel = await ctx.db.get(message.channelId);
+    if (!channel) throw new Error("Channel not found");
+
+    const user = await getCurrentUser(ctx);
+    await assertGroupMember(ctx, channel.groupId, user._id);
+
+    return message;
+  },
+});
+
 export const listByChannel = query({
   args: {
     channelId: v.id("channels"),
