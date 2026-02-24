@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Outlet, useParams } from "react-router";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -11,9 +11,10 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 export function GroupLayout() {
   const { groupId: groupIdParam } = useParams();
   const groupId = groupIdParam as Id<"groups">;
+  const { isAuthenticated } = useConvexAuth();
 
-  const group = useQuery(api.groups.getById, { groupId });
-  const currentUser = useQuery(api.users.me);
+  const group = useQuery(api.groups.getById, isAuthenticated ? { groupId } : "skip");
+  const currentUser = useQuery(api.users.me, isAuthenticated ? {} : "skip");
   const heartbeat = useMutation(api.presence.heartbeat);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
