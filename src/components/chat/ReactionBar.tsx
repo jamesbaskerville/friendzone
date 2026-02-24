@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../../../convex/_generated/api";
@@ -9,19 +9,22 @@ import { ReactionPicker } from "./ReactionPicker";
 
 interface Props {
   messageId: Id<"messages">;
+  isOwn?: boolean;
 }
 
-export function ReactionBar({ messageId }: Props) {
+export function ReactionBar({ messageId, isOwn }: Props) {
   const { currentUser } = useGroupContext();
   const reactions = useQuery(api.reactions.getByMessage, { messageId });
   const addReaction = useMutation(api.reactions.add);
   const removeReaction = useMutation(api.reactions.remove);
   const [showPicker, setShowPicker] = useState(false);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   if (!reactions || reactions.length === 0) {
     return (
       <div className="relative mt-1 flex items-center">
         <button
+          ref={addButtonRef}
           onClick={() => setShowPicker(!showPicker)}
           className="rounded-full p-1 text-xs text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-bg-surface hover:text-text-secondary"
         >
@@ -35,6 +38,8 @@ export function ReactionBar({ messageId }: Props) {
                 setShowPicker(false);
               }}
               onClose={() => setShowPicker(false)}
+              anchorRef={addButtonRef}
+              isOwn={isOwn}
             />
           )}
         </AnimatePresence>
@@ -72,6 +77,7 @@ export function ReactionBar({ messageId }: Props) {
         );
       })}
       <button
+        ref={addButtonRef}
         onClick={() => setShowPicker(!showPicker)}
         className="rounded-full border border-transparent px-1.5 py-0.5 text-xs text-text-tertiary transition-colors hover:border-border hover:bg-bg-surface hover:text-text-secondary"
       >
@@ -85,6 +91,8 @@ export function ReactionBar({ messageId }: Props) {
               setShowPicker(false);
             }}
             onClose={() => setShowPicker(false)}
+            anchorRef={addButtonRef}
+            isOwn={isOwn}
           />
         )}
       </AnimatePresence>
