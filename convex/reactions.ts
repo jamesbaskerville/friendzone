@@ -84,29 +84,34 @@ export const add = mutation({
     const uniqueReactorIds = new Set(reactionsForEmoji.map((r) => r.userId));
     const uniqueCount = uniqueReactorIds.size;
 
-    // 🏆 5+ unique reactors → Hall of Fame
-    if (args.emoji === "🏆" && uniqueCount >= 5) {
+    // 🏆 threshold unique reactors → Hall of Fame
+    if (args.emoji === "🏆") {
       const channel = await ctx.db.get(message.channelId);
       if (channel) {
-        const existingHof = await ctx.db
-          .query("hallOfFame")
-          .withIndex("by_group", (q) => q.eq("groupId", channel.groupId))
-          .collect();
+        const group = await ctx.db.get(channel.groupId);
+        const threshold = group?.hallOfFameThreshold ?? 5;
 
-        const alreadyEnshrined = existingHof.find(
-          (h) => h.messageId === args.messageId
-        );
+        if (uniqueCount >= threshold) {
+          const existingHof = await ctx.db
+            .query("hallOfFame")
+            .withIndex("by_group", (q) => q.eq("groupId", channel.groupId))
+            .collect();
 
-        if (!alreadyEnshrined) {
-          await ctx.db.insert("hallOfFame", {
-            groupId: channel.groupId,
-            messageId: args.messageId,
-            channelId: message.channelId,
-            authorId: message.authorId,
-            body: message.body,
-            trophyCount: uniqueCount,
-            enshrineDate: Date.now(),
-          });
+          const alreadyEnshrined = existingHof.find(
+            (h) => h.messageId === args.messageId
+          );
+
+          if (!alreadyEnshrined) {
+            await ctx.db.insert("hallOfFame", {
+              groupId: channel.groupId,
+              messageId: args.messageId,
+              channelId: message.channelId,
+              authorId: message.authorId,
+              body: message.body,
+              trophyCount: uniqueCount,
+              enshrineDate: Date.now(),
+            });
+          }
         }
       }
     }
