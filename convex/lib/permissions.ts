@@ -47,3 +47,15 @@ export async function assertGroupAdmin(
   }
   return membership;
 }
+
+export async function assertGroupOwner(
+  ctx: QueryCtx | MutationCtx,
+  groupId: Id<"groups">,
+  userId: Id<"users">
+) {
+  const membership = await assertGroupMember(ctx, groupId, userId);
+  if (membership.role !== "owner") {
+    throw new Error("Owner access required");
+  }
+  return membership;
+}
